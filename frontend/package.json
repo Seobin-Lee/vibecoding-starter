@@ -9,7 +9,7 @@
     "db:init": "sqlite3 local.db < scripts/init-db.sql"
   },
   "dependencies": {
-    "better-sqlite3": "^11.10.0",
+    "@libsql/client": "^0.14.0",
     "next": "^15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

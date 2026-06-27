@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import { createClient } from "@libsql/client";
 import path from "node:path";
 
 export type Profile = {
@@ -38,10 +38,12 @@ const defaultHighlights: Highlight[] = [
   { id: 3, label: "이도류 플레이" },
 ];
 
-function getDb() {
-  const db = new Database(dbPath);
+async function getDb() {
+  const db = createClient({
+    url: `file:${dbPath}`,
+  });
 
-  db.exec(`
+  await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS profile (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -62,26 +64,26 @@ function getDb() {
   return db;
 }
 
-export function getProfile() {
+export async function getProfile() {
   try {
-    const profile = getDb()
-      .prepare(
-        "SELECT id, name, team, position, uniform_number, tagline, introduction, image_path FROM profile ORDER BY id LIMIT 1",
-      )
-      .get() as Profile | undefined;
+    const db = await getDb();
+    const result = await db.execute(
+      "SELECT id, name, team, position, uniform_number, tagline, introduction, image_path FROM profile ORDER BY id LIMIT 1",
+    );
 
-    return profile ?? defaultProfile;
+    return result.rows.length > 0 ? (result.rows[0] as unknown as Profile) : defaultProfile;
   } catch (error) {
     console.error(error);
     return defaultProfile;
   }
 }
 
-export function getHighlights() {
+export async function getHighlights() {
   try {
-    const highlights = getDb().prepare("SELECT id, label FROM highlights ORDER BY id").all() as Highlight[];
+    const db = await getDb();
+    const result = await db.execute("SELECT id, label FROM highlights ORDER BY id");
 
-    return highlights.length > 0 ? highlights : defaultHighlights;
+    return result.rows.length > 0 ? (result.rows as unknown as Highlight[]) : defaultHighlights;
   } catch (error) {
     console.error(error);
     return defaultHighlights;
